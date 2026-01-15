@@ -21,7 +21,7 @@ serverPort: 8080
 httpProxyCount: 0
 
 # title of the faucet
-faucetTitle: "Sepolia PoW Faucet"
+faucetTitle: "{{ lookup('env', 'NETWORK') }} PoW Faucet"
 
 # url to image displayed on the startpage
 faucetImage: "/images/fauceth_420.jpg"
@@ -53,10 +53,10 @@ faucetSecret: "07af397097044878ff064a544df8e185fdff197d5a8332bc99bd435aa915fc9c7
 
 # ETH execution layer RPC host
 #ethRpcHost: "http://127.0.0.1:8545/"
-ethRpcHost: "add_your_alchemy_or_infura_rpc_url_here"
+ethRpcHost: "{{ lookup('env', 'ETH_RPC_URL') }}"
 
 # faucet wallet private key (hex, without 0x prefix)
-ethWalletKey: "your_wallet_prvate_key"
+ethWalletKey: "{{ lookup('env', 'ETH_WALLET_PRIVATE_KEY') }}"
 
 # EVM chain id (null for auto-detect from RPC)
 ethChainId: null
@@ -70,7 +70,7 @@ faucetCoinSymbol: "SepoliaETH"
 faucetCoinType: "native"
 
 # coin contract address (only for faucetCoinType = erc20)
-#faucetCoinContract: "0x94373a4919B3240D86eA41593D5eBa789FEF3848" # WETH9 on holesky
+#faucetCoinContract: "0x94373a4919B3240D86eA41593D5eBa789FEF3848" # WETH9 on {{ lookup('env', 'NETWORK') }}
 
 # transaction gas limit
 # use 21000 to prevent transactions to contracts
@@ -94,7 +94,7 @@ ethMaxPending: 12
 ethQueueNoFunds: true
 
 # link to eth transaction explorer with {txid} as placeholder for transaction id or null for no link
-ethTxExplorerLink: "https://sepolia.etherscan.io//tx/{txid}"
+ethTxExplorerLink: "https://{{ lookup('env', 'NETWORK') }}.etherscan.io//tx/{txid}"
 
 
 # min/max drop amount (max is the default if no module lowers it)
@@ -283,7 +283,7 @@ modules:
     # require minimal erc20 token balances on mainnet wallet
     minErc20Balances: []
       #- name: "TestToken"
-      #  address: "0x94373a4919B3240D86eA41593D5eBa789FEF3848" # WETH9 on holesky
+      #  address: "0x94373a4919B3240D86eA41593D5eBa789FEF3848" # WETH9 on {{ lookup('env', 'NETWORK') }}
       #  decimals: 18
       #  minBalance: 10000000000000000 # 0.01 WETH
 
@@ -555,5 +555,5 @@ resultSharing:
   caption: "Or support this faucet by sharing your result with a "
 
   # result sharing buttons
-  twitter: "Boom! Just got {amount} Holesky ETH from {url} (Mining for {duration} with {hashrate} H/s) #holesky #faucet"
-  mastodon: "Boom! Just got {amount} Holesky ETH from {url} (Mining for {duration} with {hashrate} H/s)"
+  twitter: "Boom! Just got {amount} {{ lookup('env', 'NETWORK') }} ETH from {url} (Mining for {duration} with {hashrate} H/s) #{{ lookup('env', 'NETWORK') }} #faucet"
+  mastodon: "Boom! Just got {amount} {{ lookup('env', 'NETWORK') }} ETH from {url} (Mining for {duration} with {hashrate} H/s)"

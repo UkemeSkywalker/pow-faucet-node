@@ -51,20 +51,12 @@
         chdir: /home/ubuntu/PoWFaucet/faucet-client
       become_user: ubuntu
 
-    - name: Copy local faucet config to remote
-      copy:
-        src: ../faucet-config.example.yaml
-        dest: /home/ubuntu/PoWFaucet/faucet-client/faucet-config.example.yaml
-        owner: ubuntu
-        group: ubuntu
-
-    - name: Copy config as faucet-config.yaml
-      copy:
-        src: /home/ubuntu/PoWFaucet/faucet-client/faucet-config.example.yaml
+    - name: Deploy faucet config from template
+      template:
+        src: ./faucet-config.yaml.j2
         dest: /home/ubuntu/PoWFaucet/faucet-client/faucet-config.yaml
         owner: ubuntu
         group: ubuntu
-        remote_src: yes
       
     - name: Create systemd service for PoWFaucet
       copy:

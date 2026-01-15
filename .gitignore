@@ -14,3 +14,4 @@ override.tf.json
 terraform.rc
 .env
 faucet-config.yaml
+faucet-config.example.yaml
