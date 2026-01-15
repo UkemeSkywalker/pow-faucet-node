@@ -21,7 +21,7 @@ serverPort: 8080
 httpProxyCount: 0
 
 # title of the faucet
-faucetTitle: "{{ lookup('env', 'NETWORK') }} PoW Faucet"
+faucetTitle: "{{ network }} PoW Faucet"
 
 # url to image displayed on the startpage
 faucetImage: "/images/fauceth_420.jpg"
@@ -30,7 +30,7 @@ faucetImage: "/images/fauceth_420.jpg"
 faucetHomeHtml: |
   <div class='pow-info'>
     <h5>What is a PoW Faucet?</h5>
-    This is an Ethereum Faucet running on the {{ lookup('env', 'NETWORK') }} Testnet.<br>
+    This is an Ethereum Faucet running on the {{ network }} Testnet.<br>
     To prevent malicious actors from exhausting all available funds or 
     accumulating enough Ether to mount long running spam attacks, 
     this faucet requires some mining work to be done in exchange for 
@@ -53,16 +53,16 @@ faucetSecret: "07af397097044878ff064a544df8e185fdff197d5a8332bc99bd435aa915fc9c7
 
 # ETH execution layer RPC host
 #ethRpcHost: "http://127.0.0.1:8545/"
-ethRpcHost: "{{ lookup('env', 'ETH_RPC_URL') }}"
+ethRpcHost: "{{ eth_rpc_url }}"
 
 # faucet wallet private key (hex, without 0x prefix)
-ethWalletKey: "{{ lookup('env', 'ETH_WALLET_PRIVATE_KEY') }}"
+ethWalletKey: "{{ eth_wallet_key }}"
 
 # EVM chain id (null for auto-detect from RPC)
 ethChainId: null
 
 # symbol (short name) of the coin that can be mined
-faucetCoinSymbol: "{{ lookup('env', 'NETWORK') }}ETH"
+faucetCoinSymbol: "{{ network }}ETH"
 
 # type of coin that can be mined
 # native = native coin (ETH)
@@ -70,7 +70,7 @@ faucetCoinSymbol: "{{ lookup('env', 'NETWORK') }}ETH"
 faucetCoinType: "native"
 
 # coin contract address (only for faucetCoinType = erc20)
-#faucetCoinContract: "0x94373a4919B3240D86eA41593D5eBa789FEF3848" # WETH9 on {{ lookup('env', 'NETWORK') }}
+#faucetCoinContract: "0x94373a4919B3240D86eA41593D5eBa789FEF3848" # WETH9 on {{ network }}
 
 # transaction gas limit
 # use 21000 to prevent transactions to contracts
@@ -94,7 +94,7 @@ ethMaxPending: 12
 ethQueueNoFunds: true
 
 # link to eth transaction explorer with {txid} as placeholder for transaction id or null for no link
-ethTxExplorerLink: "https://{{ lookup('env', 'NETWORK') }}.etherscan.io//tx/{txid}"
+ethTxExplorerLink: "https://{{ network | lower }}.etherscan.io//tx/{txid}"
 
 
 # min/max drop amount (max is the default if no module lowers it)
@@ -283,7 +283,7 @@ modules:
     # require minimal erc20 token balances on mainnet wallet
     minErc20Balances: []
       #- name: "TestToken"
-      #  address: "0x94373a4919B3240D86eA41593D5eBa789FEF3848" # WETH9 on {{ lookup('env', 'NETWORK') }}
+      #  address: "0x94373a4919B3240D86eA41593D5eBa789FEF3848" # WETH9 on {{ network }}
       #  decimals: 18
       #  minBalance: 10000000000000000 # 0.01 WETH
 
@@ -443,7 +443,7 @@ modules:
     enabled: false
     zupassUrl: "https://zupass.org/"
     zupassApiUrl: "https://api.zupass.org/"
-    redirectUrl: "https://sepolia-faucet.pk910.de/"
+    redirectUrl: "https://{{ network }}-faucet.pk910.de/"
     event:
       name: "Devconnect 2023"
       eventIds:
@@ -555,5 +555,5 @@ resultSharing:
   caption: "Or support this faucet by sharing your result with a "
 
   # result sharing buttons
-  twitter: "Boom! Just got {amount} {{ lookup('env', 'NETWORK') }} ETH from {url} (Mining for {duration} with {hashrate} H/s) #{{ lookup('env', 'NETWORK') }} #faucet"
-  mastodon: "Boom! Just got {amount} {{ lookup('env', 'NETWORK') }} ETH from {url} (Mining for {duration} with {hashrate} H/s)"
+  twitter: "Boom! Just got {amount} {{ network }} ETH from {url} (Mining for {duration} with {hashrate} H/s) #{{ network }} #faucet"
+  mastodon: "Boom! Just got {amount} {{ network }} ETH from {url} (Mining for {duration} with {hashrate} H/s)"

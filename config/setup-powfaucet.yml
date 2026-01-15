@@ -7,6 +7,10 @@
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
     prometheus_version: "2.48.0"
     grafana_version: "10.2.3"
+    eth_rpc_url: "{{ lookup('env', 'ETH_RPC_URL') }}"
+    eth_wallet_key: "{{ lookup('env', 'ETH_WALLET_PRIVATE_KEY') }}"
+    network: "{{ lookup('env', 'NETWORK') | default('Sepolia', true) }}"
+    
     
   tasks:
     - name: Update apt cache
@@ -51,10 +55,14 @@
         chdir: /home/ubuntu/PoWFaucet/faucet-client
       become_user: ubuntu
 
+    - name: Debug environment variables
+      debug:
+        msg: "ETH_RPC_URL={{ eth_rpc_url }}, NETWORK={{ network }}, WALLET_KEY_LENGTH={{ eth_wallet_key | length }}"
+
     - name: Deploy faucet config from template
       template:
         src: faucet-config.yaml.j2
-        dest: /home/ubuntu/PoWFaucet/faucet-client/faucet-config.yaml
+        dest: /home/ubuntu/PoWFaucet/faucet-config.yaml
         owner: ubuntu
         group: ubuntu
       
