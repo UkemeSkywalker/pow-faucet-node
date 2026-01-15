@@ -1,0 +1,80 @@
+---
+- name: Setup PoWFaucet Node
+  hosts: pow_faucet_nodes
+  become: yes
+  vars:
+    nodejs_version: "24"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+    
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        
+    - name: Install required packages
+      apt:
+        name:
+          - curl
+          - git
+          - build-essential
+        state: present
+        
+    - name: Install Node.js
+      shell: |
+        curl -fsSL https://deb.nodesource.com/setup_{{ nodejs_version }}.x | sudo -E bash -
+        apt-get install -y nodejs
+      args:
+        creates: /usr/bin/node
+        
+    - name: Clone PoWFaucet repository
+      git:
+        repo: https://github.com/pk910/PoWFaucet.git
+        dest: /home/ubuntu/PoWFaucet
+        force: yes
+      become_user: ubuntu
+      
+    - name: Install PoWFaucet dependencies
+      npm:
+        path: /home/ubuntu/PoWFaucet
+      become_user: ubuntu
+      
+    - name: Install faucet-client dependencies
+      npm:
+        path: /home/ubuntu/PoWFaucet/faucet-client
+      become_user: ubuntu
+      
+    - name: Build faucet client
+      shell: node ./build-client.js
+      args:
+        chdir: /home/ubuntu/PoWFaucet/faucet-client
+      become_user: ubuntu
+      
+    - name: Create systemd service for PoWFaucet
+      copy:
+        content: |
+          [Unit]
+          Description=PoWFaucet Service
+          After=network.target
+          
+          [Service]
+          Type=simple
+          User=ubuntu
+          WorkingDirectory=/home/ubuntu/PoWFaucet
+          ExecStart=/usr/bin/npm run start
+          Restart=always
+          RestartSec=10
+          Environment=NODE_ENV=production
+          
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/powfaucet.service
+        
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+        
+    - name: Enable and start PoWFaucet service
+      systemd:
+        name: powfaucet
+        enabled: yes
+        state: started
