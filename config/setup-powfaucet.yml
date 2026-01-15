@@ -53,7 +53,7 @@
 
     - name: Deploy faucet config from template
       template:
-        src: ./faucet-config.yaml.j2
+        src: faucet-config.yaml.j2
         dest: /home/ubuntu/PoWFaucet/faucet-client/faucet-config.yaml
         owner: ubuntu
         group: ubuntu

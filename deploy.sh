@@ -2,6 +2,14 @@
 
 set -e
 
+# Load environment variables from .env file
+if [ -f ".env" ]; then
+    echo "📄 Loading environment variables from .env..."
+    export $(cat .env | grep -v '^#' | xargs)
+else
+    echo "⚠️  Warning: .env file not found. Environment variables may not be set."
+fi
+
 # Variables
 SSH_KEY_PATH=${1:-"~/.ssh/id_rsa"}
 SSH_PUBLIC_KEY_PATH="${SSH_KEY_PATH}.pub"

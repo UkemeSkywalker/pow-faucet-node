@@ -6,13 +6,13 @@ variable "instance_name" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "m5.xlarge"
+  default     = "t3.medium"
 }
 
 variable "volume_size" {
   description = "Root volume size in GB"
   type        = number
-  default     = 1024
+  default     = 20
 }
 
 variable "allowed_tcp_ports" {

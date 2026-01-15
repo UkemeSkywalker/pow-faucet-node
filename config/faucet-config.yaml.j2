@@ -30,7 +30,7 @@ faucetImage: "/images/fauceth_420.jpg"
 faucetHomeHtml: |
   <div class='pow-info'>
     <h5>What is a PoW Faucet?</h5>
-    This is an Ethereum Faucet running on the Sepoloa Testnet.<br>
+    This is an Ethereum Faucet running on the {{ lookup('env', 'NETWORK') }} Testnet.<br>
     To prevent malicious actors from exhausting all available funds or 
     accumulating enough Ether to mount long running spam attacks, 
     this faucet requires some mining work to be done in exchange for 
@@ -62,7 +62,7 @@ ethWalletKey: "{{ lookup('env', 'ETH_WALLET_PRIVATE_KEY') }}"
 ethChainId: null
 
 # symbol (short name) of the coin that can be mined
-faucetCoinSymbol: "SepoliaETH"
+faucetCoinSymbol: "{{ lookup('env', 'NETWORK') }}ETH"
 
 # type of coin that can be mined
 # native = native coin (ETH)
