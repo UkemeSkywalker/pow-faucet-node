@@ -6,6 +6,7 @@
     nodejs_version: "24"
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
     prometheus_version: "2.48.0"
+    node_exporter_version: "1.7.0"
     grafana_version: "10.2.3"
     eth_rpc_url: "{{ lookup('env', 'ETH_RPC_URL') }}"
     eth_wallet_key: "{{ lookup('env', 'ETH_WALLET_PRIVATE_KEY') }}"
@@ -174,6 +175,44 @@
         state: started
         daemon_reload: yes
 
+    - name: Download and install Node Exporter
+      unarchive:
+        src: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+        dest: /tmp
+        remote_src: yes
+
+    - name: Copy Node Exporter binary
+      copy:
+        src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+        dest: /usr/local/bin/node_exporter
+        mode: '0755'
+        remote_src: yes
+
+    - name: Create Node Exporter systemd service
+      copy:
+        content: |
+          [Unit]
+          Description=Node Exporter
+          After=network.target
+
+          [Service]
+          User=prometheus
+          Group=prometheus
+          Type=simple
+          ExecStart=/usr/local/bin/node_exporter
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/node_exporter.service
+
+    - name: Enable and start Node Exporter
+      systemd:
+        name: node_exporter
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
     - name: Install Grafana dependencies
       apt:
         name:
@@ -196,6 +235,13 @@
         name: grafana
         state: present
         update_cache: yes
+
+    - name: Configure Grafana admin password
+      lineinfile:
+        path: /etc/grafana/grafana.ini
+        regexp: '^;admin_password ='
+        line: 'admin_password = admin'
+        backup: yes
 
     - name: Enable and start Grafana
       systemd:
