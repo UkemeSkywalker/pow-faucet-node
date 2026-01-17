@@ -98,7 +98,7 @@ ethTxExplorerLink: "https://{{ network | lower }}.etherscan.io//tx/{txid}"
 
 
 # min/max drop amount (max is the default if no module lowers it)
-maxDropAmount: 3000000000000000000 # 1 ETH
+maxDropAmount: 10000000000000000000 # 10 ETH
 minDropAmount: 1000000000000000 # 0.001 ETH
 
 # maximum session time (from start till payout)
@@ -332,7 +332,7 @@ modules:
     verifyMinerRewardPerc:   15  # 15% of powShareReward
 
     # maximum mining session time (in seconds)
-    powSessionTimeout: 18000   # 5h
+    powSessionTimeout: 43200   # 12h
 
     # maximum number of seconds a session can idle until it gets closed
     powIdleTimeout: 1800 # 30min

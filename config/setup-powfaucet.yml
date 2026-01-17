@@ -248,3 +248,59 @@
         name: grafana-server
         enabled: yes
         state: started
+
+    - name: Wait for Grafana to start
+      wait_for:
+        port: 3000
+        delay: 5
+        timeout: 60
+
+    - name: Add Prometheus data source to Grafana
+      uri:
+        url: http://localhost:3000/api/datasources
+        method: POST
+        user: admin
+        password: admin
+        force_basic_auth: yes
+        body_format: json
+        body:
+          name: Prometheus
+          type: prometheus
+          url: http://localhost:9090
+          access: proxy
+          isDefault: true
+        status_code: [200, 201, 409]
+      register: datasource_result
+
+    - name: Download Node Exporter dashboard from Grafana.com
+      get_url:
+        url: https://grafana.com/api/dashboards/1860/revisions/latest/download
+        dest: /tmp/dashboard-1860.json
+
+    - name: Load dashboard JSON
+      slurp:
+        src: /tmp/dashboard-1860.json
+      register: dashboard_json
+      tags:
+        - dashboard
+
+    - name: Import Node Exporter dashboard with proper data source
+      uri:
+        url: http://localhost:3000/api/dashboards/db
+        method: POST
+        user: admin
+        password: admin
+        force_basic_auth: yes
+        body_format: json
+        body:
+          dashboard: "{{ (dashboard_json.content | b64decode | from_json) }}"
+          overwrite: true
+          inputs:
+            - name: DS_PROMETHEUS
+              type: datasource
+              pluginId: prometheus
+              value: Prometheus
+        status_code: [200, 201]
+      tags:
+        - import_dashboard
+        - dashboard
