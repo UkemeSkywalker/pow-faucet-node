@@ -7,6 +7,8 @@
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
     prometheus_version: "2.48.0"
     node_exporter_version: "1.7.0"
+    loki_version: "2.9.3"
+    promtail_version: "2.9.3"
     grafana_version: "10.2.3"
     eth_rpc_url: "{{ lookup('env', 'ETH_RPC_URL') }}"
     eth_wallet_key: "{{ lookup('env', 'ETH_WALLET_PRIVATE_KEY') }}"
@@ -213,6 +215,189 @@
         state: started
         daemon_reload: yes
 
+    - name: Download and install Loki
+      unarchive:
+        src: "https://github.com/grafana/loki/releases/download/v{{ loki_version }}/loki-linux-amd64.zip"
+        dest: /tmp
+        remote_src: yes
+
+    - name: Copy Loki binary
+      copy:
+        src: /tmp/loki-linux-amd64
+        dest: /usr/local/bin/loki
+        mode: '0755'
+        remote_src: yes
+
+    - name: Create Loki directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: prometheus
+        group: prometheus
+      loop:
+        - /etc/loki
+        - /var/lib/loki
+
+    - name: Create Loki config
+      copy:
+        content: |
+          auth_enabled: false
+
+          server:
+            http_listen_port: 3100
+
+          ingester:
+            lifecycler:
+              address: 127.0.0.1
+              ring:
+                kvstore:
+                  store: inmemory
+                replication_factor: 1
+            chunk_idle_period: 5m
+            chunk_retain_period: 30s
+
+          schema_config:
+            configs:
+              - from: 2020-10-24
+                store: boltdb-shipper
+                object_store: filesystem
+                schema: v11
+                index:
+                  prefix: index_
+                  period: 24h
+
+          storage_config:
+            boltdb_shipper:
+              active_index_directory: /var/lib/loki/index
+              cache_location: /var/lib/loki/cache
+              shared_store: filesystem
+            filesystem:
+              directory: /var/lib/loki/chunks
+
+          limits_config:
+            enforce_metric_name: false
+            reject_old_samples: true
+            reject_old_samples_max_age: 168h
+
+          chunk_store_config:
+            max_look_back_period: 0s
+
+          table_manager:
+            retention_deletes_enabled: false
+            retention_period: 0s
+        dest: /etc/loki/loki-config.yaml
+        owner: prometheus
+        group: prometheus
+
+    - name: Create Loki systemd service
+      copy:
+        content: |
+          [Unit]
+          Description=Loki
+          After=network.target
+
+          [Service]
+          User=prometheus
+          Group=prometheus
+          Type=simple
+          ExecStart=/usr/local/bin/loki -config.file=/etc/loki/loki-config.yaml
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/loki.service
+
+    - name: Enable and start Loki
+      systemd:
+        name: loki
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+    - name: Download and install Promtail
+      unarchive:
+        src: "https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-linux-amd64.zip"
+        dest: /tmp
+        remote_src: yes
+
+    - name: Copy Promtail binary
+      copy:
+        src: /tmp/promtail-linux-amd64
+        dest: /usr/local/bin/promtail
+        mode: '0755'
+        remote_src: yes
+
+    - name: Create Promtail config directory
+      file:
+        path: /etc/promtail
+        state: directory
+        owner: prometheus
+        group: prometheus
+
+    - name: Create Promtail config
+      copy:
+        content: |
+          server:
+            http_listen_port: 9080
+            grpc_listen_port: 0
+
+          positions:
+            filename: /tmp/positions.yaml
+
+          clients:
+            - url: http://localhost:3100/loki/api/v1/push
+
+          scrape_configs:
+            - job_name: system
+              static_configs:
+                - targets:
+                    - localhost
+                  labels:
+                    job: varlogs
+                    __path__: /var/log/*log
+
+            - job_name: powfaucet
+              static_configs:
+                - targets:
+                    - localhost
+                  labels:
+                    job: powfaucet_events
+                    __path__: /home/ubuntu/PoWFaucet/faucet-events.log
+
+                - targets:
+                    - localhost
+                  labels:
+                    job: powfaucet_stats
+                    __path__: /home/ubuntu/PoWFaucet/faucet-stats.log
+        dest: /etc/promtail/promtail-config.yaml
+        owner: prometheus
+        group: prometheus
+
+    - name: Create Promtail systemd service
+      copy:
+        content: |
+          [Unit]
+          Description=Promtail
+          After=network.target
+
+          [Service]
+          User=prometheus
+          Group=prometheus
+          Type=simple
+          ExecStart=/usr/local/bin/promtail -config.file=/etc/promtail/promtail-config.yaml
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/promtail.service
+
+    - name: Enable and start Promtail
+      systemd:
+        name: promtail
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
     - name: Install Grafana dependencies
       apt:
         name:
@@ -272,6 +457,21 @@
         status_code: [200, 201, 409]
       register: datasource_result
 
+    - name: Add Loki data source to Grafana
+      uri:
+        url: http://localhost:3000/api/datasources
+        method: POST
+        user: admin
+        password: admin
+        force_basic_auth: yes
+        body_format: json
+        body:
+          name: Loki
+          type: loki
+          url: http://localhost:3100
+          access: proxy
+        status_code: [200, 201, 409]
+
     - name: Download Node Exporter dashboard from Grafana.com
       get_url:
         url: https://grafana.com/api/dashboards/1860/revisions/latest/download
@@ -304,3 +504,31 @@
       tags:
         - import_dashboard
         - dashboard
+
+    - name: Download Loki dashboard from Grafana.com
+      get_url:
+        url: https://grafana.com/api/dashboards/14055/revisions/latest/download
+        dest: /tmp/dashboard-14055.json
+
+    - name: Load Loki dashboard JSON
+      slurp:
+        src: /tmp/dashboard-14055.json
+      register: loki_dashboard_json
+
+    - name: Import Loki dashboard
+      uri:
+        url: http://localhost:3000/api/dashboards/db
+        method: POST
+        user: admin
+        password: admin
+        force_basic_auth: yes
+        body_format: json
+        body:
+          dashboard: "{{ (loki_dashboard_json.content | b64decode | from_json) }}"
+          overwrite: true
+          inputs:
+            - name: DS_LOKI
+              type: datasource
+              pluginId: loki
+              value: Loki
+        status_code: [200, 201]
