@@ -1,3 +1,5 @@
+<img width="511" height="751" alt="Screenshot 2026-01-21 at 6 31 06 AM" src="https://github.com/user-attachments/assets/44e4b819-7113-4f5f-9f37-237f51b8d179" />
+
 # PoWFaucet Node Infrastructure
 
 Automated deployment of a PoWFaucet node with monitoring stack on AWS using Terraform and Ansible.
